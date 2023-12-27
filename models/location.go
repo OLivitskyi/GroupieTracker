@@ -1,7 +1,6 @@
 package models
 
 type Location struct {
-	LocationID string
-	Country    string
-	City       string
+	ID        int      `json:"id"`
+	Locations []string `json:"locations"`
 }

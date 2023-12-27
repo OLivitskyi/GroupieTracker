@@ -1,6 +1,6 @@
 package models
 
 type Date struct {
-	DateID       string
-	ConcertDates []string
+	ID    int      `json:"id"`
+	Dates []string `json:"dates"`
 }

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{.Name}}</title>
+</head>
+<body>
+<h1>{{.Name}}</h1>
+<p>First Album: {{.FirstAlbum}}</p>
+
+<h2>Locations</h2>
+{{range .Locations}}
+<p>{{.}}</p>
+{{end}}
+
+<h2>Concerts Dates</h2>
+{{range .ConcertDates}}
+<p>{{.}}</p>
+{{end}}
+</body>
+</html>
