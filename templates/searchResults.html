@@ -1,26 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{.query}}</title>
+    <title>Artist Search Results</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
 <div class="container">
-    <h1>Search results for {{.query}}</h1>
+    <h1>Search results for {{.artist.ID}}</h1>
 
-    <div class="row">
-        {{range .bands}}
-        <div class="col-3">
-            <div class="card">
-                <img src="{{.Image}}" class="card-img-top" alt="{{.BandName}}">
-                <div class="card-body">
-                    <h5 class="card-title">{{.BandName}}</h5>
-                    <a href="/bands/{{.BandId}}">More Information</a>
-                </div>
-            </div>
+    <div class="card">
+        <img src="{{.artist.Image}}" class="card-img-top" alt="{{.artist.Name}}">
+        <div class="card-body">
+            <h5 class="card-title">{{.artist.Name}}</h5>
+            <p class="card-subtitle text-muted">Artist ID: {{.artist.ID}}</p>
+            <a href="/artist/{{.artist.ID}}" class="btn btn-primary">More Info</a>
         </div>
-        {{end}}
     </div>
+
 </div>
 </body>
 </html>

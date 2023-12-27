@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type TemplateRegistry struct {
@@ -99,6 +100,35 @@ func main() {
 			Locations:    locations.Locations,
 			ConcertDates: concertDates.Dates,
 		})
+	})
+
+	// Implement search by artists id functional
+	r.POST("/search", func(c echo.Context) error {
+		query := c.FormValue("query")
+
+		resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists")
+		if err != nil {
+			return c.String(http.StatusInternalServerError, "failed to fetch artists")
+		}
+		if resp.StatusCode != http.StatusOK {
+			return c.String(http.StatusInternalServerError, "unexpected status from api")
+		}
+		defer resp.Body.Close()
+
+		artists := []models.Artist{}
+		if err := json.NewDecoder(resp.Body).Decode(&artists); err != nil {
+			return c.String(http.StatusInternalServerError, "failed to decode response")
+		}
+
+		for _, artist := range artists {
+			if strconv.Itoa(artist.ID) == query {
+				return c.Render(http.StatusOK, "searchResults.html", map[string]interface{}{
+					"artist": artist,
+				})
+			}
+		}
+
+		return c.String(http.StatusBadRequest, "No artist found with that ID.")
 	})
 
 	r.Logger.Fatal(r.Start(":3000"))
