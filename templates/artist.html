@@ -1,20 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{{.Name}}</title>
+    <title>Artists</title>
 </head>
 <body>
-<h1>{{.Name}}</h1>
+<h1>Artist Details for {{.Name}}</h1>
+<p>ID: {{.Id}}</p>
+<p>Name: {{.Name}}</p>
+<p>Image: <img src="{{.Image}}" alt="{{.Name}}"></p>
+<p>Members:</p>
+<ul>
+    {{range .Members}}
+    <li>{{.}}</li>
+    {{end}}
+</ul>
+<p>Locations:</p>
+<ul>
+    {{range .LocationList}}
+    <li>{{.}}</li>
+    {{end}}
+</ul>
+<p>Concert dates:</p>
+<ul>
+    {{range .ConcertDatesList}}
+    <li>{{.}}</li>
+    {{end}}
+</ul>
+<p>Creation Date: {{.CreationDate}}</p>
 <p>First Album: {{.FirstAlbum}}</p>
 
-<h2>Locations</h2>
-{{range .Locations}}
-<p>{{.}}</p>
-{{end}}
-
-<h2>Concerts Dates</h2>
-{{range .ConcertDates}}
-<p>{{.}}</p>
-{{end}}
+<h2>See other artists</h2>
+<form action="/search" method="get">
+    <label for="query">Search for an artist by ID:</label>
+    <input type="text" id="query" name="query">
+    <input type="submit" value="Search">
+</form>
 </body>
 </html>

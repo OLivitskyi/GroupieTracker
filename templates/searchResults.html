@@ -6,14 +6,14 @@
 </head>
 <body>
 <div class="container">
-    <h1>Search results for {{.artist.ID}}</h1>
+    <h1>Search results for {{.Id}}</h1>
 
     <div class="card">
-        <img src="{{.artist.Image}}" class="card-img-top" alt="{{.artist.Name}}">
+        <img src="{{.Image}}" class="card-img-top" alt="{{.Name}}">
         <div class="card-body">
-            <h5 class="card-title">{{.artist.Name}}</h5>
-            <p class="card-subtitle text-muted">Artist ID: {{.artist.ID}}</p>
-            <a href="/artist/{{.artist.ID}}" class="btn btn-primary">More Info</a>
+            <h5 class="card-title">{{.Name}}</h5>
+            <p class="card-subtitle text-muted">Artist ID: {{.Id}}</p>
+            <a href="/artist/{{.Id}}" class="btn btn-primary">More Info</a>
         </div>
     </div>
 

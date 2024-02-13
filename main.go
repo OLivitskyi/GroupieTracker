@@ -3,133 +3,102 @@ package main
 import (
 	"GroupieTracker/models"
 	"encoding/json"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"html/template"
-	"io"
+	"io/ioutil"
+	"log"
 	"net/http"
-	"strconv"
+	"strings"
 )
 
-type TemplateRegistry struct {
-	templates *template.Template
-}
-
-func (t *TemplateRegistry) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
-}
-
 func main() {
-	r := echo.New()
-	r.Use(middleware.Logger())
-	r.Use(middleware.Recover())
-
-	templates := &TemplateRegistry{
-		templates: template.Must(template.ParseGlob("templates/*.html")),
-	}
-
-	r.Renderer = templates
-
-	r.GET("/", func(c echo.Context) error {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists")
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "failed to fetch artists")
-		}
-		if resp.StatusCode != http.StatusOK {
-			return c.String(http.StatusInternalServerError, "unexpected status from api")
+			log.Fatal(err)
 		}
 		defer resp.Body.Close()
-
-		artists := []models.Artist{}
-		if err := json.NewDecoder(resp.Body).Decode(&artists); err != nil {
-			return c.String(http.StatusInternalServerError, "failed to decode response")
+		body, _ := ioutil.ReadAll(resp.Body)
+		var artists []models.Artist
+		err = json.Unmarshal(body, &artists)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		return c.Render(http.StatusOK, "index.html", map[string]interface{}{
-			"artists": artists,
-		})
+		tmpl := template.Must(template.ParseFiles("templates/index.html"))
+		err = tmpl.Execute(w, artists)
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
-	r.GET("/artist/:id", func(c echo.Context) error {
-		id := c.Param("id")
+	http.HandleFunc("/artist/", func(w http.ResponseWriter, r *http.Request) {
+		id := strings.TrimPrefix(r.URL.Path, "/artist/")
 		resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists/" + id)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "failed to fetch artist")
-		}
-		if resp.StatusCode != http.StatusOK {
-			return c.String(http.StatusInternalServerError, "unexpected status from api")
+			log.Fatal(err)
 		}
 		defer resp.Body.Close()
-
-		artist := new(models.Artist)
-		if err := json.NewDecoder(resp.Body).Decode(&artist); err != nil {
-			return c.String(http.StatusInternalServerError, "failed to decode response")
-		}
-
-		// Make another API call to fetch the locations
-		locResp, err := http.Get(artist.Locations)
+		body, _ := ioutil.ReadAll(resp.Body)
+		var artist models.Artist
+		err = json.Unmarshal(body, &artist)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "failed to fetch locations")
-		}
-		defer locResp.Body.Close()
-
-		locations := new(models.Location)
-		if err := json.NewDecoder(locResp.Body).Decode(locations); err != nil {
-			return c.String(http.StatusInternalServerError, "failed to decode locations")
+			log.Fatal(err)
 		}
 
-		// And another to fetch concert dates
-		dateResp, err := http.Get(artist.ConcertDates)
+		err = artist.GetLocations()
 		if err != nil {
-			return c.String(http.StatusInternalServerError, "failed to fetch concertDates")
-		}
-		defer dateResp.Body.Close()
-
-		concertDates := new(models.Date)
-		if err := json.NewDecoder(dateResp.Body).Decode(concertDates); err != nil {
-			return c.String(http.StatusInternalServerError, "failed to decode concertDates")
+			log.Fatal(err)
 		}
 
-		// Now we return a new anonymous struct which includes the locations and dates
-		return c.Render(http.StatusOK, "artist.html", struct {
-			*models.Artist
-			Locations    []string
-			ConcertDates []string
-		}{
-			Artist:       artist,
-			Locations:    locations.Locations,
-			ConcertDates: concertDates.Dates,
-		})
+		err = artist.GetConcertDates()
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = artist.GetConcertDates()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tmpl := template.Must(template.ParseFiles("templates/artist.html"))
+		err = tmpl.Execute(w, artist)
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
-	// Implement search by artists id functional
-	r.POST("/search", func(c echo.Context) error {
-		query := c.FormValue("query")
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet {
+			r.ParseForm()
+			id := r.Form.Get("query")
+			resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists/" + id)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer resp.Body.Close()
+			body, _ := ioutil.ReadAll(resp.Body)
+			var artist models.Artist
+			err = json.Unmarshal(body, &artist)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists")
-		if err != nil {
-			return c.String(http.StatusInternalServerError, "failed to fetch artists")
-		}
-		if resp.StatusCode != http.StatusOK {
-			return c.String(http.StatusInternalServerError, "unexpected status from api")
-		}
-		defer resp.Body.Close()
+			err = artist.GetLocations()
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		artists := []models.Artist{}
-		if err := json.NewDecoder(resp.Body).Decode(&artists); err != nil {
-			return c.String(http.StatusInternalServerError, "failed to decode response")
-		}
+			err = artist.GetConcertDates()
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		for _, artist := range artists {
-			if strconv.Itoa(artist.ID) == query {
-				return c.Render(http.StatusOK, "searchResults.html", map[string]interface{}{
-					"artist": artist,
-				})
+			tmpl := template.Must(template.ParseFiles("templates/searchResults.html"))
+			err = tmpl.Execute(w, artist)
+			if err != nil {
+				log.Fatal(err)
 			}
 		}
-
-		return c.String(http.StatusBadRequest, "No artist found with that ID.")
 	})
 
-	r.Logger.Fatal(r.Start(":3000"))
+	log.Fatal(http.ListenAndServe(":8090", nil))
 }
