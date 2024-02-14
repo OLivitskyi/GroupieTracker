@@ -70,6 +70,10 @@ func main() {
 		if r.Method == http.MethodGet {
 			r.ParseForm()
 			id := r.Form.Get("query")
+			if id == "" {
+				http.Error(w, "Search field should not be empty", http.StatusBadRequest)
+				return
+			}
 			resp, err := http.Get("https://groupietrackers.herokuapp.com/api/artists/" + id)
 			if err != nil {
 				log.Fatal(err)
